@@ -95,10 +95,10 @@ void TheLazySecurity::__init(int __role, int __transport, int __auth_mode) {
 
 void TheLazySecurity::setup_tls() {
 	int rc;
-	if (transport == MBEDTLS_SSL_TRANSPORT_STREAM) {
-		if ((rc = mbedtls_ssl_cookie_setup(&ctx_cookie, mbedtls_ctr_drbg_random, &ctr_drbg)))
-			throw __TLS_ERROR("mbedtls_ssl_cookie_setup", rc);
-	} else if (transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+	if ((rc = mbedtls_ssl_cookie_setup(&ctx_cookie, mbedtls_ctr_drbg_random, &ctr_drbg)))
+		throw __TLS_ERROR("mbedtls_ssl_cookie_setup", rc);
+
+	if (transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
 		mbedtls_ssl_conf_dtls_cookies(&cfg_ssl, mbedtls_ssl_cookie_write,
 					      mbedtls_ssl_cookie_check, &ctx_cookie);
 		mbedtls_ssl_set_timer_cb(&ctx_ssl, &ctx_timer, mbedtls_timing_set_delay,
