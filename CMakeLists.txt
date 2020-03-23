@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.2)
+project(TheLazySecurity)
+
+set(CMAKE_CXX_STANDARD 17)
+
+add_library(TheLazySecurity TheLazySecurity.cpp TheLazySecurity.hpp)
+target_link_libraries(TheLazySecurity mbedtls mbedx509 mbedcrypto)
+
+add_executable(TheLazySecurity_TTYServerTest test_tty_server.cpp)
+target_link_libraries(TheLazySecurity_TTYServerTest TheLazySecurity)
+
+add_executable(TheLazySecurity_TTYClientTest test_tty_client.cpp)
+target_link_libraries(TheLazySecurity_TTYClientTest TheLazySecurity)
