@@ -60,7 +60,7 @@ namespace YukiWorkshop {
 		mbedtls_pk_context private_key;
 		mbedtls_timing_delay_context ctx_timer;
 
-		int transport = -1;
+		int transport = -1, role = -1;
 
 		static void __debug_print(void *ctx, int level, const char *file, int line, const char *str);
 
@@ -75,6 +75,7 @@ namespace YukiWorkshop {
 	public:
 		TheLazySecurity(int __role, int __transport, int __auth_mode) {
 			transport = __transport;
+			role = __role;
 			__init(__role, __transport, __auth_mode);
 		}
 
@@ -105,7 +106,14 @@ namespace YukiWorkshop {
 				throw __TLS_ERROR("mbedtls_ssl_conf_own_cert", rc);
 		}
 
-		void setup_tls(const uint8_t *__transport_id, size_t __transport_id_len);
+		void setup_tls();
+
+		void set_transport_id(const uint8_t *__transport_id, size_t __transport_id_len) {
+			int rc;
+			if ((rc = mbedtls_ssl_set_client_transport_id(&ctx_ssl, __transport_id, __transport_id_len)))
+				throw __TLS_ERROR("mbedtls_ssl_set_client_transport_id", rc);
+
+		}
 
 		int handshake() {
 			return mbedtls_ssl_handshake(&ctx_ssl);

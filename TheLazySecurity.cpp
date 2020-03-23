@@ -93,7 +93,7 @@ void TheLazySecurity::__init(int __role, int __transport, int __auth_mode) {
 
 }
 
-void TheLazySecurity::setup_tls(const uint8_t *__transport_id, size_t __transport_id_len) {
+void TheLazySecurity::setup_tls() {
 	int rc;
 	if (transport == MBEDTLS_SSL_TRANSPORT_STREAM) {
 		if ((rc = mbedtls_ssl_cookie_setup(&ctx_cookie, mbedtls_ctr_drbg_random, &ctr_drbg)))
@@ -112,7 +112,4 @@ void TheLazySecurity::setup_tls(const uint8_t *__transport_id, size_t __transpor
 	if ((rc = mbedtls_ssl_setup(&ctx_ssl, &cfg_ssl)))
 		throw __TLS_ERROR("mbedtls_ssl_setup", rc);
 
-
-	if ((rc = mbedtls_ssl_set_client_transport_id(&ctx_ssl, __transport_id, __transport_id_len)))
-		throw __TLS_ERROR("mbedtls_ssl_set_client_transport_id", rc);
 }
