@@ -62,12 +62,12 @@ int TheLazySecurity::__mcb_recv_timeout(void *__userp, uint8_t *__buf, size_t __
 }
 
 void TheLazySecurity::__init(int __role, int __transport, int __auth_mode) {
-	mbedtls_ssl_init(&ctx_ssl);
 	mbedtls_ssl_config_init(&cfg_ssl);
 	mbedtls_x509_crt_init(&cert_list);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
 	mbedtls_entropy_init(&ctx_entropy);
-
+	mbedtls_ssl_cookie_init(&ctx_cookie);
+	mbedtls_pk_init(&private_key);
 
 	int rc;
 
@@ -79,14 +79,16 @@ void TheLazySecurity::__init(int __role, int __transport, int __auth_mode) {
 
 	mbedtls_ssl_conf_authmode(&cfg_ssl, __auth_mode);
 	mbedtls_ssl_conf_rng(&cfg_ssl, mbedtls_ctr_drbg_random, &ctr_drbg);
-	mbedtls_ssl_cookie_init(&ctx_cookie);
 
-	if (__transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
-		// TODO
-	}
+	if (role == MBEDTLS_SSL_IS_SERVER) {
+		if ((rc = mbedtls_ssl_cookie_setup(&ctx_cookie, mbedtls_ctr_drbg_random, &ctr_drbg)))
+			throw __TLS_ERROR("mbedtls_ssl_cookie_setup", rc);
 
-	if (__role == MBEDTLS_SSL_IS_SERVER) {
-		mbedtls_pk_init(&private_key);
+		if (transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+			mbedtls_ssl_conf_dtls_cookies(&cfg_ssl, mbedtls_ssl_cookie_write,
+						      mbedtls_ssl_cookie_check, &ctx_cookie);
+
+		}
 	}
 
 	mbedtls_ssl_conf_dbg(&cfg_ssl, __debug_print, stderr);
@@ -95,12 +97,9 @@ void TheLazySecurity::__init(int __role, int __transport, int __auth_mode) {
 
 void TheLazySecurity::setup_tls() {
 	int rc;
-	if ((rc = mbedtls_ssl_cookie_setup(&ctx_cookie, mbedtls_ctr_drbg_random, &ctr_drbg)))
-		throw __TLS_ERROR("mbedtls_ssl_cookie_setup", rc);
+	mbedtls_ssl_init(&ctx_ssl);
 
 	if (transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
-		mbedtls_ssl_conf_dtls_cookies(&cfg_ssl, mbedtls_ssl_cookie_write,
-					      mbedtls_ssl_cookie_check, &ctx_cookie);
 		mbedtls_ssl_set_timer_cb(&ctx_ssl, &ctx_timer, mbedtls_timing_set_delay,
 					 mbedtls_timing_get_delay);
 	}
@@ -111,5 +110,4 @@ void TheLazySecurity::setup_tls() {
 
 	if ((rc = mbedtls_ssl_setup(&ctx_ssl, &cfg_ssl)))
 		throw __TLS_ERROR("mbedtls_ssl_setup", rc);
-
 }

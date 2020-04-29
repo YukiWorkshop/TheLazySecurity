@@ -60,6 +60,8 @@ namespace YukiWorkshop {
 		mbedtls_pk_context private_key;
 		mbedtls_timing_delay_context ctx_timer;
 
+		std::vector<int> buf_ciphersuites;
+
 		int transport = -1, role = -1;
 
 		static void __debug_print(void *ctx, int level, const char *file, int line, const char *str);
@@ -102,8 +104,11 @@ namespace YukiWorkshop {
 		void setup_certs() {
 			int rc;
 			mbedtls_ssl_conf_ca_chain(&cfg_ssl, &cert_list, nullptr); // TODO: crl
-			if ((rc = mbedtls_ssl_conf_own_cert(&cfg_ssl, &cert_list, &private_key)))
-				throw __TLS_ERROR("mbedtls_ssl_conf_own_cert", rc);
+
+			if (role == MBEDTLS_SSL_IS_SERVER) {
+				if ((rc = mbedtls_ssl_conf_own_cert(&cfg_ssl, &cert_list, &private_key)))
+					throw __TLS_ERROR("mbedtls_ssl_conf_own_cert", rc);
+			}
 		}
 
 		void setup_tls();
@@ -125,6 +130,20 @@ namespace YukiWorkshop {
 
 		int write(const uint8_t *__data, size_t __len) {
 			return mbedtls_ssl_write(&ctx_ssl, __data, __len);
+		}
+
+		int max_out_record_payload() {
+			return mbedtls_ssl_get_max_out_record_payload(&ctx_ssl);
+		}
+
+		void set_ciphersuites(const std::initializer_list<int> __cs_list) {
+			buf_ciphersuites.clear();
+			for (auto it : __cs_list) {
+				buf_ciphersuites.push_back(it);
+			}
+			buf_ciphersuites.push_back(0);
+
+			mbedtls_ssl_conf_ciphersuites(&cfg_ssl, buf_ciphersuites.data());
 		}
 
 	};
